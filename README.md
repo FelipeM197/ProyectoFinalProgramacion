@@ -20,7 +20,7 @@ pip install pytz
 - **`transacciones.csv`**: Archivo donde se almacenan las transacciones realizadas por los usuarios.
 - **`cuentas.csv`**: Archivo donde se almacenan las cuentas de los usuarios y sus saldos.
 
-# Nota: Al ejecutar el código se crearán automáticamente los dos archivos .csv
+Nota: Al ejecutar el código se crearán automáticamente los dos archivos .csv
 
 ## Funcionalidades
 
