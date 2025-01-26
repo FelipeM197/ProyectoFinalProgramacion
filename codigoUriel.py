@@ -1,7 +1,8 @@
-from colorama import init, Fore
+from colorama import init, Fore  # agregar color al texto en la terminal
 
 # Inicializar colorama
 init(autoreset=True)
+
 
 def menuUsuario(usuario):
     while True:
@@ -24,7 +25,9 @@ def menuUsuario(usuario):
             print(Fore.YELLOW + "Opción para transferir dinero seleccionada.")
             # Aquí iría la lógica para transferir dinero
         elif opcion == "4":
-            print(Fore.YELLOW + "Opción para ver historial de transacciones seleccionada.")
+            print(
+                Fore.YELLOW + "Opción para ver historial de transacciones seleccionada."
+            )
             # Aquí iría la lógica para mostrar el historial de transacciones
         elif opcion == "5":
             print(Fore.GREEN + f"Tu saldo actual es: {usuario['saldo']}")
@@ -35,11 +38,9 @@ def menuUsuario(usuario):
         else:
             print(Fore.RED + "Selecciona una opción válida.")
 
+
 # Simulación de un usuario
-usuario = {
-    "nombreUsuario": "Ejemplo",
-    "saldo": 1000  # Saldo inicial del usuario
-}
+usuario = {"nombreUsuario": "Ejemplo", "saldo": 1000}  # Saldo inicial del usuario
 
 # Llamada al menú del usuario
 menuUsuario(usuario)
