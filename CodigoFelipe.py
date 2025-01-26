@@ -8,14 +8,14 @@ from colorama import init, Fore  # Para colores en la consola
 init(autoreset=True)
 
 # Variables
-archivoTransacciones = "transacciones.csv"
-zona_horaria = pytz.timezone("America/Guayaquil")  # Zona horaria de Ecuador
+tz = pytz.timezone("America/Guayaquil")  # Zona horaria de Ecuador
+archivo_transacciones = "transacciones.csv"
 
 # Función para cargar transacciones desde el archivo CSV
 def cargarTransacciones():
     transacciones = []
-    if os.path.exists(archivoTransacciones):
-        with open(archivoTransacciones, mode="r", encoding="utf-8") as archivo:
+    if os.path.exists(archivo_transacciones):
+        with open(archivo_transacciones, mode="r", encoding="utf-8") as archivo:
             lector = csv.DictReader(archivo)
             for fila in lector:
                 transacciones.append(fila)
@@ -24,22 +24,14 @@ def cargarTransacciones():
 # Función para registrar una transacción
 def registrarTransaccion(usuario, operacion, valor):
     transaccion = {
-        "fecha": datetime.datetime.now(zona_horaria).strftime("%Y-%m-%d %H:%M:%S"),
+        "fecha": datetime.datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S"),
         "monto": valor,
         "tipo": operacion,
         "nombreUsuario": usuario["nombreUsuario"],
         "saldo": usuario["saldo"],
     }
-    with open(
-        archivoTransacciones, mode="a", newline="", encoding="utf-8"
-    ) as archivo:
-        campos = [
-            "fecha",
-            "monto",
-            "tipo",
-            "nombreUsuario",
-            "saldo",
-        ]
+    with open(archivo_transacciones, mode="a", newline="", encoding="utf-8") as archivo:
+        campos = ["fecha", "monto", "tipo", "nombreUsuario", "saldo"]
         escritor = csv.DictWriter(archivo, fieldnames=campos)
         if archivo.tell() == 0:
             escritor.writeheader()
@@ -48,9 +40,7 @@ def registrarTransaccion(usuario, operacion, valor):
 # Función para mostrar el historial de transacciones del usuario
 def mostrar_historial(usuario):
     transacciones = cargarTransacciones()
-    transacciones_usuario = [
-        t for t in transacciones if t["nombreUsuario"] == usuario["nombreUsuario"]
-    ]
+    transacciones_usuario = [t for t in transacciones if t["nombreUsuario"] == usuario["nombreUsuario"]]
 
     if not transacciones_usuario:
         print(Fore.YELLOW + "\nNo tienes transacciones registradas.")
@@ -58,52 +48,70 @@ def mostrar_historial(usuario):
 
     print(Fore.CYAN + "\n##### Historial de Transacciones #####")
     for t in transacciones_usuario:
-        print(
-            Fore.WHITE
-            + f"Fecha: {t['fecha']}, Tipo: {t['tipo']}, Monto: {t['monto']}, Saldo: {t['saldo']}"
-        )
+        print(Fore.WHITE + f"Fecha: {t['fecha']}, Tipo: {t['tipo']}, Monto: {t['monto']}, Saldo: {t['saldo']}")
 
 # Función para consultar el saldo actual del usuario
 def consultar_saldo(usuario):
     print(Fore.GREEN + f"Tu saldo actual es: {usuario['saldo']}")
 
-# Función principal
-if __name__ == "__main__":
-    # Ejemplo de usuario autenticado
-    usuario_actual = {
-        "nombreUsuario": "FELIPE",
-        "saldo": "1000"
-    }
-
+# Menú principal del usuario
+def menuUsuario(usuario):
     while True:
-        print(Fore.CYAN + "\n##### Menú #####")
-        print(Fore.WHITE + "1. Consultar saldo")
-        print("2. Ver historial de transacciones")
-        print("3. Registrar una transacción")
-        print("4. Salir")
+        print(Fore.CYAN + "\n##### Menú del Usuario #####")
+        print(Fore.WHITE + "1. Retirar dinero")
+        print("2. Depositar dinero")
+        print("3. Transferir dinero")
+        print("4. Historial de transacciones")
+        print("5. Ver saldo")
+        print("6. Cerrar sesión")
         opcion = input("Selecciona una opción: ").strip()
 
         if opcion == "1":
-            consultar_saldo(usuario_actual)
-        elif opcion == "2":
-            mostrar_historial(usuario_actual)
-        elif opcion == "3":
-            operacion = input("Ingrese el tipo de operación (Deposito/Retiro): ").strip()
             try:
-                valor = float(input("Ingrese el monto: ").strip())
-                if operacion.lower() in ["deposito", "retiro"] and valor > 0:
-                    if operacion.lower() == "retiro" and float(usuario_actual["saldo"]) < valor:
-                        print(Fore.RED + "Fondos insuficientes para realizar el retiro.")
-                    else:
-                        usuario_actual["saldo"] = str(float(usuario_actual["saldo"]) + valor if operacion.lower() == "deposito" else float(usuario_actual["saldo"]) - valor)
-                        registrarTransaccion(usuario_actual, operacion.capitalize(), valor if operacion.lower() == "deposito" else -valor)
-                        print(Fore.GREEN + "Transacción realizada con éxito.")
+                valor = float(input("Ingresa el monto a retirar: ").strip())
+                if valor > 0 and usuario["saldo"] >= valor:
+                    usuario["saldo"] -= valor
+                    registrarTransaccion(usuario, "Retiro", -valor)
+                    print(Fore.GREEN + "Retiro realizado con éxito.")
                 else:
-                    print(Fore.RED + "Operación no válida o monto incorrecto.")
+                    print(Fore.RED + "Fondos insuficientes o monto inválido.")
             except ValueError:
-                print(Fore.RED + "Monto ingresado no es válido.")
+                print(Fore.RED + "Monto ingresado no válido.")
+
+        elif opcion == "2":
+            try:
+                valor = float(input("Ingresa el monto a depositar: ").strip())
+                if valor > 0:
+                    usuario["saldo"] += valor
+                    registrarTransaccion(usuario, "Depósito", valor)
+                    print(Fore.GREEN + "Depósito realizado con éxito.")
+                else:
+                    print(Fore.RED + "Monto inválido.")
+            except ValueError:
+                print(Fore.RED + "Monto ingresado no válido.")
+
+        elif opcion == "3":
+            print(Fore.YELLOW + "Funcionalidad de transferencias no implementada aún.")
+
         elif opcion == "4":
-            print(Fore.GREEN + "Saliendo del sistema...")
+            mostrar_historial(usuario)
+
+        elif opcion == "5":
+            consultar_saldo(usuario)
+
+        elif opcion == "6":
+            print(Fore.GREEN + "Cerrando sesión...")
             break
+
         else:
             print(Fore.RED + "Selecciona una opción válida.")
+
+# Simulación de un usuario
+usuario = {
+    "nombreUsuario": "Ejemplo",
+    "saldo": 1000.0  # Saldo inicial del usuario
+}
+
+# Llamada al menú del usuario
+if __name__ == "__main__":
+    menuUsuario(usuario)
