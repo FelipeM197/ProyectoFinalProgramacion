@@ -4,6 +4,8 @@ Este proyecto es un sistema bancario básico que permite a los usuarios realizar
 y consultar su historial de transacciones. 
 También incluye un sistema de autenticación para garantizar la seguridad de las cuentas de los usuarios.
 
+# Nota: El proyecto fue desarrollado en repl.it, por lo que puede ser fácilmente ejecutado en dicho IDE
+
 ## Requisitos
 
 ### Software necesario
