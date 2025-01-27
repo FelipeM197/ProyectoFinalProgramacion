@@ -1,10 +1,11 @@
 # ------------------------ Librerías ------------------------
 import csv  # para usar archivos csv
-import os  # verifica la existencia de los archivos
+import os  # verifica la existencia de los archivos y limpiar consola
 import datetime  # para la fecha y hora en el historial de transacciones
 import pytz
 from getpass_asterisk.getpass_asterisk import getpass_asterisk  # para que en vez de la contraseña se vena asteriscos
 from colorama import init, Fore, Style  # para colores en la consola
+from getpass import getpass  # para ocultar la entrada en "Presione Enter para continuar"
 
 # Inicializar colorama
 init(autoreset=True)
@@ -12,10 +13,17 @@ init(autoreset=True)
 # ------------------------ Variables ------------------------
 archivoCuentas = "cuentas.csv"  # los dos son archivos de bases de datos
 archivoTransacciones = "transacciones.csv"
-zona_horaria = pytz.timezone("America/Guayaquil")  # Ecuador
-fecha_con_zona = datetime.datetime.now(zona_horaria)
+zonaHoraria = pytz.timezone("America/Guayaquil")  # Ecuador
+fechaConZona = datetime.datetime.now(zonaHoraria)
 
 # ------------------------ Funciones ------------------------
+
+def limpiarConsola(mensaje=None):
+    """Limpia la consola dependiendo del sistema operativo y muestra un mensaje opcional."""
+    if mensaje:
+        print(Fore.YELLOW + mensaje)
+        getpass(Fore.CYAN + "Presiona Enter para continuar...") #Usamos getpass para que no se vea lo que escribe el usuario antes de presionar ENTER
+    os.system("cls" if os.name == "nt" else "clear")
 
 # Inicializar archivo con datos iniciales si no existe
 def inicializarSistema():
@@ -28,14 +36,15 @@ def inicializarSistema():
                 "nombreUsuario": "FELIPE",
                 "contraseña": "ABC123",
                 "saldo": "1000",
-            },
+            },  # si el archivo no existe inicia un documento con estos datos
             {"nombreUsuario": "URIEL", "contraseña": "XYZ789", "saldo": "1500"},
             {"nombreUsuario": "ZENAN", "contraseña": "123", "saldo": "2000"},
             {"nombreUsuario": "AIDAN", "contraseña": "532", "saldo": "2500"},
             {"nombreUsuario": "JOSUE", "contraseña": "423", "saldo": "3000"},
         ]
         guardarCuentas(cuentasIniciales)
-    if not os.path.exists(archivoTransacciones):
+    # Verificar archivo de transacciones
+    if not os.path.exists(archivoTransacciones):  # de igual forma si no existe el archivo de transacciones, crea uno
         print(Fore.YELLOW + "Archivo 'transacciones.csv' no encontrado. Creando archivo vacío...")
         with open(
             archivoTransacciones, mode="w", newline="", encoding="utf-8"
@@ -44,192 +53,204 @@ def inicializarSistema():
             escritor = csv.DictWriter(archivo, fieldnames=campos)
             escritor.writeheader()
 
-
-def guardarCuentas(cuentas):
+# Guardar cuentas en el archivo CSV
+def guardarCuentas(cuentas):  # es un formato que define los campos "columnas"
     with open(
         archivoCuentas, mode="w", newline="", encoding="utf-8"
-    ) as archivo:
+    ) as archivo:  # sobreescribe en la fila
         campos = [
             "nombreUsuario",
             "contraseña",
             "saldo",
-        ]
+        ]  # si no hay nada escribe estos campos
         escritor = csv.DictWriter(archivo, fieldnames=campos)
         escritor.writeheader()
         for cuenta in cuentas:
             escritor.writerow(cuenta)
 
-
+# Cargar cuentas desde el archivo CSV
 def cargarCuentas():
     cuentas = []
     with open(
         archivoCuentas, mode="r", encoding="utf-8"
-    ) as archivo:
+    ) as archivo:  # abre el archivo modo de lectura
         lector = csv.DictReader(archivo)
         for fila in lector:
             cuentas.append(fila)
     return cuentas
 
-
+# Registrar transacción en el archivo CSV
 def registrarTransaccion(usuario, operacion, valor):
-    transaccion = {
-        "fecha": datetime.datetime.now(zona_horaria).strftime("%Y-%m-%d %H:%M:%S"),
+    transaccion = {  # aqui detallo los campos del otro archivo
+        "fecha": datetime.datetime.now(zonaHoraria).strftime("%Y-%m-%d %H:%M:%S"),
         "monto": valor,
         "tipo": operacion,
         "nombreUsuario": usuario["nombreUsuario"],
         "saldo": usuario["saldo"],
-    }
+    }  # con esto cargo los procesos al archivo
     with open(
         archivoTransacciones, mode="a", newline="", encoding="utf-8"
-    ) as archivo:
+    ) as archivo:  # el archivo se abre en funcion de añadir una nueva fila
         campos = [
             "fecha",
             "monto",
             "tipo",
             "nombreUsuario",
             "saldo",
-        ]
+        ]  # si esta vacio escribe esto
         escritor = csv.DictWriter(archivo, fieldnames=campos)
         if archivo.tell() == 0:
             escritor.writeheader()
         escritor.writerow(transaccion)
 
-
+# Cargar transacciones desde el archivo CSV
 def cargarTransacciones():
     transacciones = []
     if os.path.exists(archivoTransacciones):
         with open(
             archivoTransacciones, mode="r", encoding="utf-8"
-        ) as archivo:
+        ) as archivo:  # se abre el archivo en modo lectura, no cambia nada
             lector = csv.DictReader(archivo)
             for fila in lector:
                 transacciones.append(fila)
     return transacciones
 
-
+# Autenticación del usuario
 def autenticarUsuario():
+    limpiarConsola()
     usuario = (
         input(Fore.CYAN + "Ingrese su usuario: ").strip().upper()
-    )
+    )  # con esto leemos el usuario de tal forma que eliminamos espacios y lee mayúsculas y minúsculas como iguales
     contraseña = (
         getpass_asterisk(Fore.CYAN + "Ingresa tu contraseña: ").strip().upper()
-    )
+    )  # importamos la librería para que se vea en asteriscos
 
     for cuenta in cuentas:
         if cuenta["nombreUsuario"] == usuario and cuenta["contraseña"] == contraseña:
-            print(Fore.GREEN + "Autenticación exitosa.")
+            print(Fore.GREEN + "Autenticación exitosa.")  # verifica el usuario en el archivo de cuentas
             return cuenta
-    print(Fore.RED + "Usuario o contraseña incorrectos.")
+    limpiarConsola("Usuario o contraseña incorrectos.")
     return None
 
-
+# Retirar dinero
 def retirarDinero(usuario):
     try:
+        limpiarConsola()
         monto = float(input(Fore.CYAN + "Ingresa el monto que deseas retirar: "))
         if monto <= 0:
-            print(Fore.RED + "El monto debe ser mayor a 0.")
+            limpiarConsola("El monto debe ser mayor a 0.")  # tratamos con valores positivos
+            return
+        if monto > 10000:
+            limpiarConsola("El monto máximo para retirar es 10000.")
             return
 
-        saldo_actual = float(usuario["saldo"])
-        if saldo_actual >= monto:
-            usuario["saldo"] = str(saldo_actual - monto)
+        saldoActual = float(usuario["saldo"])  # el retiro va a restar su saldo del archivo de cuentas
+        if saldoActual >= monto:
+            usuario["saldo"] = str(saldoActual - monto)
             registrarTransaccion(usuario, "Retiro", -monto)
-            print(Fore.GREEN + f"Retiro exitoso. Tu nuevo saldo es: {usuario['saldo']}")
+            limpiarConsola(f"Retiro exitoso. Tu nuevo saldo es: {usuario['saldo']}")  # también vamos a mostrar el saldo después del retiro
             guardarCuentas(cuentas)
         else:
-            print(Fore.RED + "Saldo insuficiente.")
+            limpiarConsola("Saldo insuficiente.")  # en caso de que el retiro sea mayor al saldo, irá un error
     except ValueError:
-        print(Fore.RED + "Por favor, ingresa un número válido.")
+        limpiarConsola("Por favor, ingresa un número válido.")
 
-
-def depositar_dinero(usuario):
+# Depositar dinero
+def depositarDinero(usuario):
     try:
+        limpiarConsola()
         monto = float(input(Fore.CYAN + "Ingresa el monto que deseas depositar: "))
         if monto <= 0:
-            print(Fore.RED + "El monto debe ser mayor a 0.")
+            limpiarConsola("El monto debe ser mayor a 0.")  # proceso similar al del retiro
+            return
+        if monto > 10000:
+            limpiarConsola("El monto máximo para depositar es 10000.")
             return
 
-        saldo_actual = float(usuario["saldo"])
-        usuario["saldo"] = str(saldo_actual + monto)
+        saldoActual = float(usuario["saldo"])  # la diferencia es que este valor se suma al saldo
+        usuario["saldo"] = str(saldoActual + monto)
         registrarTransaccion(usuario, "Depósito", monto)
-        print(Fore.GREEN + f"Depósito exitoso. Tu nuevo saldo es: {usuario['saldo']}")
+        limpiarConsola(f"Depósito exitoso. Tu nuevo saldo es: {usuario['saldo']}")
         guardarCuentas(cuentas)
     except ValueError:
-        print(Fore.RED + "Por favor, ingresa un número válido.")
+        limpiarConsola("Por favor, ingresa un número válido.")
 
-
-def transferir_dinero(usuario):
+# Transferir dinero
+def transferirDinero(usuario):
+    limpiarConsola()
     print(Fore.CYAN + "\nTransferencia de Dinero")
     destinatario = (
-        input("Por favor ingrese el nombre de usuario del destinatario: ")
-        .strip()
-        .upper()
+        input("Por favor ingrese el nombre de usuario del destinatario: ").strip().upper()  # de igual forma eliminamos espacios y trabajamos con datos mayúsculas=minúsculas
     )
     cuentaDestino = next(
-        (c for c in cuentas if c["nombreUsuario"] == destinatario),
-        None,
+        (c for c in cuentas if c["nombreUsuario"] == destinatario), None  # lee el archivo y verifica el usuario
     )
 
     if not cuentaDestino:
-        print(Fore.RED + "Error: La cuenta del destinatario no coincide.")
+        limpiarConsola("Error: La cuenta del destinatario no coincide.")  # si no hay coincidencias arroja un error
         return
 
     try:
         cantidad = float(input("Por favor digite la cantidad de dinero a transferir: "))
         if cantidad <= 0:
-            print(Fore.RED + "Error: La cantidad de dinero a transferir debe ser positiva.")
+            limpiarConsola("Error: La cantidad de dinero a transferir debe ser positiva.")  # igual manejo de errores en cuanto a cantidades
+            return
+        if cantidad > 10000:
+            limpiarConsola("El monto máximo para transferir es 10000.")
             return
         if float(usuario["saldo"]) < cantidad:
-            print(Fore.RED + "Error: Fondos insuficientes para llevar a cabo la transferencia.")
+            limpiarConsola("Error: Fondos insuficientes para llevar a cabo la transferencia.")
             return
 
-        usuario["saldo"] = str(float(usuario["saldo"]) - cantidad)
-        cuentaDestino["saldo"] = str(float(cuentaDestino["saldo"]) + cantidad)
-        registrarTransaccion(usuario, "Transferencia (envío)", -cantidad)
-        registrarTransaccion(cuentaDestino, "Transferencia (recibo)", cantidad)
-        print(Fore.GREEN + f"Se ha transferido ${cantidad:.2f} a {destinatario} exitosamente.")
+        # Realizar transferencia
+        usuario["saldo"] = str(float(usuario["saldo"]) - cantidad)  # le restamos el valor a quien deposita
+        cuentaDestino["saldo"] = str(float(cuentaDestino["saldo"]) + cantidad)  # se lo sumamos a quien es transferido
+        registrarTransaccion(usuario, "Transferencia (envío)", -cantidad)  # hacemos de cuenta que no hay comisiones de transacciones porque somos un banco chill
+        registrarTransaccion(cuentaDestino, "Transferencia (recibo)", cantidad)  # reescribimos los datos en los archivos para guardar la transacción
+        limpiarConsola(f"Se ha transferido ${cantidad:.2f} a {destinatario} exitosamente.")  # mensaje de verificación
         guardarCuentas(cuentas)
     except ValueError:
-        print(Fore.RED + "Cantidad invalida. Por favor digite un número valido.")
+        limpiarConsola("Cantidad inválida. Por favor digite un número válido.")  # si hay algún otro error
 
-
-def mostrar_historial(usuario):
+# Mostrar historial de transacciones de un usuario
+def mostrarHistorial(usuario):  # este es el proceso que nos va a mostrar todo lo que hemos guardado en el archivo
+    limpiarConsola()
     transacciones = cargarTransacciones()
-    transacciones_usuario = [
+    transaccionesUsuario = [
         t for t in transacciones if t["nombreUsuario"] == usuario["nombreUsuario"]
     ]
 
-    if not transacciones_usuario:
-        print(Fore.YELLOW + "\nNo tienes transacciones registradas.")
+    if not transaccionesUsuario:
+        limpiarConsola("No tienes transacciones registradas.")  # si no hay nada a tu nombre de usuario, te lo dice
         return
 
-    print(Fore.CYAN + "\n##### Historial de Transacciones #####")
-    for t in transacciones_usuario:
+    print(Fore.CYAN + "\n##### Historial de Transacciones #####")  # si lo hay te lo muestra todo
+    for t in transaccionesUsuario:
         print(
-            Fore.WHITE
-            + f"Fecha: {t['fecha']}, Tipo: {t['tipo']}, Monto: {t['monto']}, Saldo: {t['saldo']}"
+            Fore.WHITE + f"Fecha: {t['fecha']}, Tipo: {t['tipo']}, Monto: {t['monto']}, Saldo: {t['saldo']}"
         )
+    input(Fore.CYAN + "\nPresiona Enter para regresar al menú...")
 
-
-def salida_programa():
+# Salida del programa
+def salidaPrograma():  # es una validación para verificar que de verdad quiere el usuario salir del sistema
     while True:
+        limpiarConsola()
         respuesta = (
-            input(Fore.CYAN + "¿Está seguro que desea salir del sistema? (si/no): ")
-            .strip()
-            .upper()
+            input(Fore.CYAN + "¿Está seguro que desea salir del sistema? (si/no): ").strip().upper()  # trabajamos sin espacios y mayúsculas como en todo el proceso
         )
         if respuesta == "SI":
-            print(Fore.GREEN + "Saliendo del sistema...")
+            print(Fore.GREEN + "Saliendo del sistema...")  # si dice que sí, cierra el sistema
             exit()
         elif respuesta == "NO":
-            print(Fore.YELLOW + "Continuando en el sistema...")
+            limpiarConsola("Continuando en el sistema...")  # sino abre un return
             return
         else:
-            print(Fore.RED + "Es necesario que elija 'si' o 'no'.")
+            limpiarConsola("Es necesario que elija 'si' o 'no'.")  # sino es ninguna de las dos, arroja un error
 
-
-def menuUsuario(usuario):
+# Menú del usuario autenticado
+def menuUsuario(usuario):  # interfaz del sistema que muestra todas las opciones
     while True:
+        limpiarConsola()
         print(Fore.CYAN + "\n##### Menú del Usuario #####")
         print(Fore.WHITE + "1. Retirar dinero")
         print("2. Depositar dinero")
@@ -237,37 +258,40 @@ def menuUsuario(usuario):
         print("4. Historial de transacciones")
         print("5. Ver saldo")
         print("6. Cerrar sesión")
-        opcion = input("Selecciona una opción: ").strip()
+        opcion = input("Selecciona una opción: ").strip()  # eliminamos los espacios y leemos la respuesta para abrir el proceso
         if opcion == "1":
             retirarDinero(usuario)
         elif opcion == "2":
-            depositar_dinero(usuario)
+            depositarDinero(usuario)
         elif opcion == "3":
-            transferir_dinero(usuario)
+            transferirDinero(usuario)
         elif opcion == "4":
-            mostrar_historial(usuario)
+            mostrarHistorial(usuario)
         elif opcion == "5":
-            print(Fore.GREEN + f"Tu saldo actual es: {usuario['saldo']}")
+            limpiarConsola(f"Tu saldo actual es: {usuario['saldo']}")
         elif opcion == "6":
-            salida_programa()
+            salidaPrograma()
         else:
-            print(Fore.RED + "Selecciona una opción válida.")
+            limpiarConsola("Selecciona una opción válida.")  # manejo de errores
 
 # ------------------------- Programa Principal -----------------------------
+# Inicializar el sistema y cargar las cuentas
 inicializarSistema()
-cuentas = cargarCuentas()
+cuentas = cargarCuentas()  # importa los procesos para verificar los archivos, sino existen los crea
 
+# Menú Principal
 while True:
+    limpiarConsola()
     print(Fore.CYAN + "########## MENÚ PRINCIPAL ##########")
-    print(Fore.WHITE + "1. Iniciar sesión")
+    print(Fore.WHITE + "1. Iniciar sesión")  # autenticamos el usuario
     print("2. Salir")
-    seleccionar_opcion = input("Selecciona una opción: ").strip()
+    seleccionarOpcion = input("Selecciona una opción: ").strip()
 
-    if seleccionar_opcion == "1":
-        usuario_actual = autenticarUsuario()
-        if usuario_actual:
-            menuUsuario(usuario_actual)
-    elif seleccionar_opcion == "2":
-        salida_programa()
+    if seleccionarOpcion == "1":
+        usuarioActual = autenticarUsuario()  # leemos lo que el usuario ponga
+        if usuarioActual:  # si es 1 le pedimos el usuario y contraseña
+            menuUsuario(usuarioActual)  # si es 2 verificamos con el proceso de salida para verificar que de verdad quiere salir
+    elif seleccionarOpcion == "2":
+        salidaPrograma()
     else:
-        print(Fore.RED + "Selecciona una opción válida.")
+        limpiarConsola("Selecciona una opción válida.")  # si es cualquier otra cosa arrojamos un error
