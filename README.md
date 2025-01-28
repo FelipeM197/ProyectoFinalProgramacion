@@ -1,56 +1,66 @@
-# Menú de Usuario en Python con Colorama
+## Requisitos
 
-Este proyecto es un script en Python que implementa un menú interactivo para usuarios mediante la biblioteca `colorama`. Permite manejar operaciones comunes, como retirar, depositar o transferir dinero, así como consultar el historial de transacciones y el saldo actual del usuario. La interfaz está diseñada para proporcionar una experiencia de usuario con colores visuales atractivos.
+### Software necesario
+- Python 3.8 o superior.
+
+### Librerías requeridas
+- *colorama*: Para mejorar la experiencia en la consola con colores.
+
+Puedes instalar las dependencias ejecutando:
+
+bash
+pip install colorama
+
 
 ---
 
-## Requisitos
+## Estructura del Proyecto
 
-Antes de ejecutar el script, asegúrate de contar con los siguientes requisitos:
-
-- Python 3.6 o superior instalado.
-- La biblioteca `colorama` instalada. Puedes instalarla ejecutando:
-
-```bash
-pip install colorama
-```
+- *CodigoZenan.py*: Archivo principal que contiene el código del sistema.
+- *cuentas.csv*: Archivo donde se almacenan las cuentas de los usuarios y sus saldos. Se crea automáticamente al ejecutar el programa por primera vez si no existe.
 
 ---
 
 ## Funcionalidades
 
-El script incluye las siguientes opciones:
+### 1. Gestión de Cuentas
+- *Inicialización de cuentas*: Si no existe el archivo cuentas.csv, se genera con datos de prueba.
+- *Carga y guardado*: Las cuentas se leen y actualizan automáticamente desde/para el archivo CSV.
 
-1. **Retirar dinero**: Proporciona la lógica para permitir al usuario retirar dinero de su saldo actual.
-2. **Depositar dinero**: Permite al usuario añadir dinero a su saldo.
-3. **Transferir dinero**: Gestiona la transferencia de dinero a otra cuenta.
-4. **Historial de transacciones**: Muestra las transacciones previas realizadas por el usuario.
-5. **Ver saldo**: Muestra el saldo disponible del usuario.
-6. **Cerrar sesión**: Finaliza la sesión del usuario.
+### 2. Operaciones Disponibles
+- *Transferencias*: Permite transferir dinero entre cuentas registradas.
 
 ---
 
-## Cómo Usar el Script
+## Registro de Datos
 
-1. Clona o descarga este repositorio en tu máquina local.
-2. Asegúrate de tener configurado Python y las bibliotecas requeridas.
-3. Ejecuta el archivo en tu terminal o en tu entorno de desarrollo integrado (IDE) con el siguiente comando:
+El archivo cuentas.csv contiene la información de las cuentas de usuarios en formato CSV, incluyendo:
+- *nombreUsuario*: Nombre del usuario.
+- *saldo*: Saldo disponible del usuario.
 
-```bash
-python nombre_del_archivo.py
-```
+### Ejemplo de Usuario:
+csv
+nombreUsuario,saldo
+USUARIO1,2500
+USUARIO2,1500
 
-4. Sigue las instrucciones del menú interactivo y selecciona las opciones deseadas.
 
 ---
 
-## Mejoras Futuras
+## Ejecución del Programa
 
-- Implementar la lógica completa para cada una de las opciones del menú.
-- Añadir persistencia de datos con un archivo o base de datos.
-- Proporcionar autenticación de usuarios para mayor seguridad.
-- Incorporar más detalles en el historial de transacciones.
+1. Al ejecutar el programa, se cargará la cuenta de USUARIO1 como usuario predeterminado.
+2. Se mostrará un menú con opciones para realizar transferencias o salir del sistema.
 
+---
 
+## Notas
 
+- No eliminar el archivo cuentas.csv para mantener la persistencia de datos.
+- Ingresar valores válidos para evitar errores en las operaciones.
 
+---
+
+## Extensiones Futuras
+- Implementación de autenticación de usuarios.
+- Registro de transacciones detallado.
