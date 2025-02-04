@@ -54,29 +54,33 @@ def inicializarSistema():
             escritor.writeheader()
 
 # Guardar cuentas en el archivo CSV
-def guardarCuentas(cuentas):  # es un formato que define los campos "columnas"
-    with open(
-        archivoCuentas, mode="w", newline="", encoding="utf-8"
-    ) as archivo:  # sobreescribe en la fila
-        campos = [
-            "nombreUsuario",
-            "contraseña",
-            "saldo",
-        ]  # si no hay nada escribe estos campos
+def guardarCuentas(cuentas): # es un formato que define los campos "columnas"
+    with open(archivoCuentas, mode="w", newline="", encoding="utf-8") as archivo: # sobreescribe en la fila
+        campos = ["nombreUsuario", "contraseña", "saldo", "estado", "intentosFallidos"] # si no hay nada escribe estos campos
         escritor = csv.DictWriter(archivo, fieldnames=campos)
         escritor.writeheader()
         for cuenta in cuentas:
             escritor.writerow(cuenta)
 
 # Cargar cuentas desde el archivo CSV
+
+# Cargar cuentas desde el archivo CSV
 def cargarCuentas():
     cuentas = []
-    with open(
-        archivoCuentas, mode="r", encoding="utf-8"
-    ) as archivo:  # abre el archivo modo de lectura
+    with open(archivoCuentas, mode="r", encoding="utf-8") as archivo:  # abre el archivo modo de lectura
         lector = csv.DictReader(archivo)
         for fila in lector:
-            cuentas.append(fila)
+            intentos = fila["intentosFallidos"].strip()  # obtenemos el valor y eliminamos espacios en blanco
+            if intentos == "":
+                intentos = "0"  # si viene vacío, asignamos "0"
+            cuenta = {
+                "nombreUsuario": fila["nombreUsuario"],
+                "contraseña": fila["contraseña"],
+                "saldo": fila["saldo"],
+                "estado": fila["estado"],  # Cargar el estado de la cuenta
+                "intentosFallidos": int(intentos),  # Convertir a entero
+            }
+            cuentas.append(cuenta)
     return cuentas
 
 # Registrar transacción en el archivo CSV
@@ -118,19 +122,40 @@ def cargarTransacciones():
 # Autenticación del usuario
 def autenticarUsuario():
     limpiarConsola()
-    usuario = (
-        input(Fore.CYAN + "Ingrese su usuario: ").strip().upper()
-    )  # con esto leemos el usuario de tal forma que eliminamos espacios y lee mayúsculas y minúsculas como iguales
-    contraseña = (
-        getpass_asterisk(Fore.CYAN + "Ingresa tu contraseña: ").strip().upper()
-    )  # importamos la librería para que se vea en asteriscos
+    usuario = input(Fore.CYAN + "Ingrese su usuario: ").strip().upper() # con esto leemos el usuario de tal forma que eliminamos espacios y lee mayúsculas y minúsculas como iguales
 
-    for cuenta in cuentas:
-        if cuenta["nombreUsuario"] == usuario and cuenta["contraseña"] == contraseña:
-            print(Fore.GREEN + "Autenticación exitosa.")  # verifica el usuario en el archivo de cuentas
-            return cuenta
-    limpiarConsola("Usuario o contraseña incorrectos.")
-    return None
+    # Buscar si el usuario existe en las cuentas
+    cuenta = next((c for c in cuentas if c["nombreUsuario"] == usuario), None)  # verifica el usuario en el archivo de cuentas
+
+    if not cuenta:
+        limpiarConsola("Usuario no encontrado.")
+        return None
+
+    if cuenta["estado"] == "BLOQUEADA":  # Si la cuenta está bloqueada
+        limpiarConsola("Tu cuenta está bloqueada. Contacta al administrador.")
+        return None
+
+    # Si no está bloqueada, pedir contraseña
+    contraseña = getpass_asterisk(Fore.CYAN + "Ingresa tu contraseña: ").strip().upper() # importamos la librería para que se vea en asteriscos
+
+    if cuenta["contraseña"] == contraseña:
+        # Resetear intentos fallidos si la contraseña es correcta
+        cuenta["intentosFallidos"] = 0
+        guardarCuentas(cuentas)
+        print(Fore.GREEN + "Autenticación exitosa.")
+        return cuenta
+    else:
+        # Incrementar el contador de intentos fallidos
+        cuenta["intentosFallidos"] += 1
+        guardarCuentas(cuentas)
+        limpiarConsola(f"Contraseña incorrecta. Intentos restantes: {3 - cuenta['intentosFallidos']}")
+
+        if cuenta["intentosFallidos"] >= 3:
+            cuenta["estado"] = "BLOQUEADA"  # Cambiar el estado a "BLOQUEADA"
+            cuenta["intentosFallidos"] = 0  # Resetear los intentos fallidos
+            guardarCuentas(cuentas)
+            limpiarConsola("Tu cuenta ha sido bloqueada por demasiados intentos fallidos.")
+        return None
 
 # Retirar dinero
 def retirarDinero(usuario):
@@ -276,22 +301,22 @@ def menuUsuario(usuario):  # interfaz del sistema que muestra todas las opciones
 
 # ------------------------- Programa Principal -----------------------------
 # Inicializar el sistema y cargar las cuentas
-inicializarSistema()
-cuentas = cargarCuentas()  # importa los procesos para verificar los archivos, sino existen los crea
+inicializarSistema()  # Verifica si los archivos existen, de no ser así los crea con datos iniciales
+cuentas = cargarCuentas()  # Carga las cuentas desde el archivo CSV para usarlas en el sistema
 
 # Menú Principal
 while True:
-    limpiarConsola()
+    limpiarConsola()  # Limpiamos la consola para mostrar el menú limpio
     print(Fore.CYAN + "########## MENÚ PRINCIPAL ##########")
-    print(Fore.WHITE + "1. Iniciar sesión")  # autenticamos el usuario
-    print("2. Salir")
-    seleccionarOpcion = input("Selecciona una opción: ").strip()
+    print(Fore.WHITE + "1. Iniciar sesión")  # Opción para autenticar al usuario
+    print("2. Salir")  # Opción para salir del programa
+    seleccionarOpcion = input("Selecciona una opción: ").strip()  # Leer la opción seleccionada por el usuario
 
     if seleccionarOpcion == "1":
-        usuarioActual = autenticarUsuario()  # leemos lo que el usuario ponga
-        if usuarioActual:  # si es 1 le pedimos el usuario y contraseña
-            menuUsuario(usuarioActual)  # si es 2 verificamos con el proceso de salida para verificar que de verdad quiere salir
+        usuarioActual = autenticarUsuario()  # Llama a la función que autentica al usuario
+        if usuarioActual:  # Si el usuario es autenticado correctamente
+            menuUsuario(usuarioActual)  # Llama a la función que maneja el menú del usuario
     elif seleccionarOpcion == "2":
-        salidaPrograma()
+        salidaPrograma()  # Si la opción es salir, ejecuta la función para salir del programa
     else:
-        limpiarConsola("Selecciona una opción válida.")  # si es cualquier otra cosa arrojamos un error
+        limpiarConsola("Selecciona una opción válida.")  # Si la opción no es válida, muestra un error y limpia la consola
