@@ -323,7 +323,3 @@ while True:
         salidaPrograma()  # Si la opción es salir, ejecuta la función para salir del programa
     else:
         limpiarConsola("Selecciona una opción válida.")  # Si la opción no es válida, muestra un error y limpia la consola
-    elif seleccionarOpcion == "2":
-        salidaPrograma()  # Si la opción es salir, ejecuta la función para salir del programa
-    else:
-        limpiarConsola("Selecciona una opción válida.")  # Si la opción no es válida, muestra un error y limpia la consola
