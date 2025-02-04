@@ -19,7 +19,6 @@ fechaConZona = datetime.datetime.now(zonaHoraria)
 # ------------------------ Funciones ------------------------
 
 def limpiarConsola(mensaje=None):
-    """Limpia la consola dependiendo del sistema operativo y muestra un mensaje opcional."""
     if mensaje:
         print(Fore.YELLOW + mensaje)
         getpass(Fore.CYAN + "Presiona Enter para continuar...") #Usamos getpass para que no se vea lo que escribe el usuario antes de presionar ENTER
@@ -207,6 +206,10 @@ def transferirDinero(usuario):
     destinatario = (
         input("Por favor ingrese el nombre de usuario del destinatario: ").strip().upper()  # de igual forma eliminamos espacios y trabajamos con datos mayúsculas=minúsculas
     )
+    if destinatario == usuario["nombreUsuario"]: 
+        limpiarConsola("no es posible transferirte a ti mismo") 
+        return
+   
     cuentaDestino = next(
         (c for c in cuentas if c["nombreUsuario"] == destinatario), None  # lee el archivo y verifica el usuario
     )
@@ -230,7 +233,7 @@ def transferirDinero(usuario):
         # Realizar transferencia
         usuario["saldo"] = str(float(usuario["saldo"]) - cantidad)  # le restamos el valor a quien deposita
         cuentaDestino["saldo"] = str(float(cuentaDestino["saldo"]) + cantidad)  # se lo sumamos a quien es transferido
-        registrarTransaccion(usuario, "Transferencia (envío)", -cantidad)  # hacemos de cuenta que no hay comisiones de transacciones porque somos un banco chill
+        registrarTransaccion(usuario, "Transferencia (envío)", -cantidad) 
         registrarTransaccion(cuentaDestino, "Transferencia (recibo)", cantidad)  # reescribimos los datos en los archivos para guardar la transacción
         limpiarConsola(f"Se ha transferido ${cantidad:.2f} a {destinatario} exitosamente.")  # mensaje de verificación
         guardarCuentas(cuentas)
@@ -254,7 +257,7 @@ def mostrarHistorial(usuario):  # este es el proceso que nos va a mostrar todo l
         print(
             Fore.WHITE + f"Fecha: {t['fecha']}, Tipo: {t['tipo']}, Monto: {t['monto']}, Saldo: {t['saldo']}"
         )
-    input(Fore.CYAN + "\nPresiona Enter para regresar al menú...")
+    limpiarConsola(Fore.CYAN + "...")
 
 # Salida del programa
 def salidaPrograma():  # es una validación para verificar que de verdad quiere el usuario salir del sistema
@@ -316,6 +319,10 @@ while True:
         usuarioActual = autenticarUsuario()  # Llama a la función que autentica al usuario
         if usuarioActual:  # Si el usuario es autenticado correctamente
             menuUsuario(usuarioActual)  # Llama a la función que maneja el menú del usuario
+    elif seleccionarOpcion == "2":
+        salidaPrograma()  # Si la opción es salir, ejecuta la función para salir del programa
+    else:
+        limpiarConsola("Selecciona una opción válida.")  # Si la opción no es válida, muestra un error y limpia la consola
     elif seleccionarOpcion == "2":
         salidaPrograma()  # Si la opción es salir, ejecuta la función para salir del programa
     else:
